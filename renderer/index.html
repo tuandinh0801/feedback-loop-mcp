@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>Feedback Loop MCP</title>
+  <link rel="stylesheet" href="styles.css">
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+</head>
+<body>
+  <div class="app">
+    <div class="header">
+      <span class="title">Feedback Loop MCP</span>
+    </div>
+    
+    <div id="feedback-section" class="section">
+      <div id="prompt-text" class="prompt"></div>
+      
+      <div class="input-area">
+        <textarea id="feedback-text" placeholder="Share your thoughts..."></textarea>
+        <div class="input-footer">
+          <span class="hint">
+            <i class="fas fa-keyboard"></i>
+            <span class="shortcut-text">⌘ + Enter to send</span>
+          </span>
+          <button id="submit-feedback" class="btn-send">
+            <i class="fas fa-paper-plane"></i>
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+  
+  <script src="renderer.js"></script>
+</body>
+</html>
