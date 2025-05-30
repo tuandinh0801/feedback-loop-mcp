@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# Interactive Feedback MCP - Build Script (Electron Forge)
+# Feedback Loop MCP - Build Script (Electron Forge)
 # This script helps build the Electron application for different platforms using Electron Forge
 
 set -e  # Exit on any error
@@ -31,7 +31,7 @@ print_error() {
 
 # Function to show help
 show_help() {
-    echo "Interactive Feedback MCP - Build Script (Electron Forge)"
+    echo "Feedback Loop MCP - Build Script (Electron Forge)"
     echo ""
     echo "Usage: $0 [COMMAND] [OPTIONS]"
     echo ""
@@ -55,7 +55,7 @@ show_help() {
     echo "  $0 start                 # Start in development mode"
     echo ""
     echo "Output locations:"
-    echo "  Packaged app: out/Interactive Feedback MCP-darwin-arm64/"
+    echo "  Packaged app: out/Feedback Loop MCP-darwin-arm64/"
     echo "  Distributables: out/make/zip/darwin/arm64/"
     echo ""
 }
@@ -85,7 +85,7 @@ package_app() {
     print_status "Packaging application..."
     npm run package
     print_success "Application packaged successfully"
-    print_status "Packaged app available at: out/Interactive Feedback MCP-darwin-arm64/"
+    print_status "Packaged app available at: out/Feedback Loop MCP-darwin-arm64/"
 }
 
 # Function to create distributables
@@ -104,78 +104,23 @@ start_dev() {
 
 # Function to create NPM package
 create_npm_package() {
-    print_status "Creating NPM package..."
+    print_status "Creating NPM package using build script..."
     
-    # Create npm-package directory
-    mkdir -p npm-package
+    # Ensure scripts directory exists
+    if [ ! -f "scripts/build-npm.js" ]; then
+        print_error "Build script not found: scripts/build-npm.js"
+        exit 1
+    fi
     
-    # Copy necessary files
-    cp package.json npm-package/
-    cp main.js npm-package/
-    cp preload.js npm-package/
-    cp -r renderer npm-package/
-    cp -r server npm-package/
-    cp -r assets npm-package/
-    cp README.md npm-package/
+    # Run the build script
+    node scripts/build-npm.js
     
-    # Create a simple CLI wrapper
-    cat > npm-package/bin/interactive-feedback-mcp << 'EOF'
-#!/usr/bin/env node
-const { spawn } = require('child_process');
-const path = require('path');
-
-// Get the directory where this package is installed
-const packageDir = path.dirname(path.dirname(__filename));
-const electronPath = require('electron');
-
-// Start the Electron app
-const child = spawn(electronPath, [packageDir], {
-    stdio: 'inherit',
-    windowsHide: false
-});
-
-child.on('close', (code) => {
-    process.exit(code);
-});
-EOF
-    
-    chmod +x npm-package/bin/interactive-feedback-mcp
-    
-    # Update package.json for NPM distribution
-    cat > npm-package/package.json << 'EOF'
-{
-  "name": "interactive-feedback-mcp",
-  "version": "1.0.0",
-  "description": "Interactive Feedback MCP - A tool for collecting user feedback",
-  "main": "main.js",
-  "bin": {
-    "interactive-feedback-mcp": "bin/interactive-feedback-mcp"
-  },
-  "scripts": {
-    "start": "electron ."
-  },
-  "keywords": [
-    "electron",
-    "feedback",
-    "mcp",
-    "interactive",
-    "cli"
-  ],
-  "author": "Fábio Ferreira",
-  "license": "ISC",
-  "dependencies": {
-    "electron": "^32.2.6",
-    "electron-store": "^10.0.1"
-  },
-  "engines": {
-    "node": ">=16.0.0"
-  }
-}
-EOF
-    
-    print_success "NPM package created in npm-package/"
-    print_status "To publish: cd npm-package && npm publish"
-    print_status "To install globally: npm install -g ./npm-package"
+    if [ $? -eq 0 ]; then
+        print_success "NPM package created successfully"
+    else
+        print_error "Failed to create NPM package"
+        exit 1
+    fi
 }
 
 # Parse command line arguments

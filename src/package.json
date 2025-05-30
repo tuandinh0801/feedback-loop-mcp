@@ -1,0 +1,30 @@
+{
+  "name": "feedback-loop-mcp",
+  "version": "1.0.0",
+  "description": "Simple MCP Server to enable a human-in-the-loop workflow in AI-assisted development tools like Cursor. This server allows you to run commands, view their output, and provide textual feedback directly to the AI. It is also compatible with Cline and Windsurf.",
+  "main": "main.js",
+  "bin": {
+    "feedback-loop-mcp": "bin/feedback-loop-mcp"
+  },
+  "scripts": {
+    "start": "electron ."
+  },
+  "keywords": [
+    "electron",
+    "feedback",
+    "mcp",
+    "interactive",
+    "cli"
+  ],
+  "author": "Tuan Dinh",
+  "license": "MIT",
+  "dependencies": {
+    "electron": "^32.2.6",
+    "electron-store": "^10.0.1",
+    "@modelcontextprotocol/sdk": "^1.0.0",
+    "zod": "^3.22.0"
+  },
+  "engines": {
+    "node": ">=16.0.0"
+  }
+}

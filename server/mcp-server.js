@@ -3,6 +3,20 @@ const path = require('path');
 const fs = require('fs');
 const os = require('os');
 
+// Debug logging
+console.error('MCP Server starting...');
+process.on('exit', (code) => {
+  console.error(`MCP Server exiting with code: ${code}`);
+});
+process.on('SIGINT', () => {
+  console.error('MCP Server received SIGINT');
+  process.exit(0);
+});
+process.on('SIGTERM', () => {
+  console.error('MCP Server received SIGTERM');
+  process.exit(0);
+});
+
 /**
  * Launch the Electron feedback UI
  * @param {string} projectDirectory - The project directory path
@@ -77,13 +91,13 @@ function firstLine(text) {
 
 // MCP Server implementation
 const server = {
-  name: 'interactive-feedback-electron',
+  name: 'feedback-loop',
   version: '1.0.0',
   
   tools: [
     {
-      name: 'interactive_feedback',
-      description: 'Request interactive feedback for a given project directory and summary using Electron UI',
+      name: 'feedback_loop',
+      description: 'Request feedback loop for a given project directory and summary using Electron UI',
       inputSchema: {
         type: 'object',
         properties: {
@@ -102,7 +116,7 @@ const server = {
   ],
   
   async callTool(name, args) {
-    if (name === 'interactive_feedback') {
+    if (name === 'feedback_loop') {
       try {
         const result = await launchFeedbackUI(args.project_directory, args.summary);
         
@@ -154,29 +168,120 @@ module.exports = {
 if (require.main === module) {
   const { Server } = require('@modelcontextprotocol/sdk/server/index.js');
   const { StdioServerTransport } = require('@modelcontextprotocol/sdk/server/stdio.js');
+  const { ListToolsRequestSchema, CallToolRequestSchema } = require('@modelcontextprotocol/sdk/types.js');
+  const { McpError, ErrorCode } = require('@modelcontextprotocol/sdk/types.js');
   
-  const mcpServer = new Server(
-    {
-      name: server.name,
-      version: server.version
-    },
-    {
-      capabilities: {
-        tools: {}
-      }
-    }
-  );
-  
-  // Register tools
-  server.tools.forEach(tool => {
-    mcpServer.setRequestHandler({ method: 'tools/call', params: { name: tool.name } }, async (request) => {
-      return await server.callTool(request.params.name, request.params.arguments);
+  async function main() {
+     // Keep the process alive from the start
+     process.stdin.resume();
+     
+     console.error('Creating MCP server instance...');
+     const mcpServer = new Server(
+       {
+         name: 'feedback-loop-mcp',
+         version: '1.0.0',
+       },
+       {
+         capabilities: {
+           tools: {},
+         },
+       }
+     );
+
+    console.error('Registering tools...');
+    // Register the feedback_loop tool
+    mcpServer.setRequestHandler(ListToolsRequestSchema, async () => {
+      console.error('ListTools request received');
+      return {
+        tools: [
+          {
+            name: 'feedback_loop',
+            description: 'Request feedback loop for a given project directory and summary using Electron UI',
+            inputSchema: {
+              type: 'object',
+              properties: {
+                project_directory: {
+                  type: 'string',
+                  description: 'Full path to the project directory'
+                },
+                summary: {
+                  type: 'string',
+                  description: 'Short, one-line summary of the changes'
+                }
+              },
+              required: ['project_directory', 'summary']
+            },
+          },
+        ],
+      };
     });
-  });
-  
-  // Start server
-  const transport = new StdioServerTransport();
-  mcpServer.connect(transport);
-  
-  console.error('Electron Interactive Feedback MCP Server started');
+
+    mcpServer.setRequestHandler(CallToolRequestSchema, async (request) => {
+      console.error(`CallTool request received: ${request.params.name}`);
+      if (request.params.name === 'feedback_loop') {
+        const { project_directory, summary } = request.params.arguments;
+        try {
+          const result = await launchFeedbackUI(project_directory, summary);
+          
+          if (result.cancelled) {
+            return {
+              content: [{
+                type: 'text',
+                text: 'Feedback collection was cancelled by the user.'
+              }]
+            };
+          }
+          
+          const feedbackSummary = firstLine(result.feedback);
+          const hasLogs = result.logs && result.logs.trim().length > 0;
+          
+          let responseText = `Feedback received: "${feedbackSummary}"`;
+          
+          if (hasLogs) {
+            responseText += `\n\nCommand logs:\n${result.logs}`;
+          }
+          
+          return {
+            content: [{
+              type: 'text',
+              text: responseText
+            }]
+          };
+        } catch (error) {
+          return {
+            content: [{
+              type: 'text',
+              text: `Error launching feedback UI: ${error.message}`
+            }]
+          };
+        }
+      } else {
+        throw new McpError(
+          ErrorCode.MethodNotFound,
+          `Unknown tool: ${request.params.name}`
+        );
+      }
+    });
+
+    console.error('Creating transport...');
+    const transport = new StdioServerTransport();
+    console.error('Connecting server to transport...');
+    
+    try {
+       await mcpServer.connect(transport);
+       console.error('MCP server connected and ready!');
+       
+       // Keep the server running indefinitely
+       await new Promise(() => {});
+     } catch (error) {
+       console.error('Failed to connect to transport:', error);
+       throw error;
+     }
+   }
+   
+   main().catch((error) => {
+     console.error('Failed to start MCP server:', error);
+     process.exit(1);
+   });
 }
+  

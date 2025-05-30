@@ -2,6 +2,8 @@
 
 Simple MCP Server to enable a human-in-the-loop workflow in AI-assisted development tools like Cursor. This server allows you to run commands, view their output, and provide textual feedback directly to the AI. It is also compatible with Cline and Windsurf.
 
+> **Inspiration**: This project is inspired by [interactive-feedback-mcp](https://github.com/noopstudios/interactive-feedback-mcp) by Fábio Ferreira (@fabiomlferreira).
+
 ## Features
 
 - **Cross-platform**: Works on macOS, Windows, and Linux
@@ -12,15 +14,30 @@ Simple MCP Server to enable a human-in-the-loop workflow in AI-assisted developm
 
 ## Installation
 
-### Prerequisites
+### Quick Start with npx (Recommended)
 
-- Node.js 16 or higher
-- npm or yarn
+The easiest way to use this MCP server is via npx:
 
-### Setup
+```bash
+npx feedback-loop-mcp
+```
 
-1. Clone or navigate to the project directory:
+### Global Installation
+
+For frequent use, install globally:
+
+```bash
+npm install -g feedback-loop-mcp
+feedback-loop-mcp
+```
+
+### Local Development Setup
+
+For development or customization:
+
+1. Clone the repository:
    ```bash
+   git clone <repository-url>
    cd feedback-loop-mcp
    ```
 
@@ -29,18 +46,77 @@ Simple MCP Server to enable a human-in-the-loop workflow in AI-assisted developm
    npm install
    ```
 
-## Usage
+3. Run in development mode:
+   ```bash
+   npm run dev
+   ```
 
-### Development Mode
+## MCP Server Configuration
 
-Run the application in development mode:
-```bash
-npm run dev
+### Cursor IDE
+
+Add the following configuration to your Cursor settings (`mcp.json`):
+
+```json
+{
+  "mcpServers": {
+    "feedback-loop-mcp": {
+      "command": "npx",
+      "args": ["feedback-loop-mcp"],
+      "timeout": 600,
+      "autoApprove": [
+        "feedback_loop"
+      ]
+    }
+  }
+}
 ```
 
-### Production Mode
+### Cline / Windsurf
 
-Start the application:
+Similar setup principles apply. Configure the server command in your MCP settings:
+
+```json
+{
+  "mcpServers": {
+    "feedback-loop-mcp": {
+      "command": "npx",
+      "args": ["feedback-loop-mcp"]
+    }
+  }
+}
+```
+
+### Claude Desktop
+
+Add to your Claude Desktop configuration:
+
+```json
+{
+  "mcpServers": {
+    "feedback-loop-mcp": {
+      "command": "npx",
+      "args": ["feedback-loop-mcp"]
+    }
+  }
+}
+```
+
+## Usage
+
+### Running the Server
+
+#### Via npx (Recommended)
+```bash
+npx feedback-loop-mcp
+```
+
+#### Via Global Installation
+```bash
+feedback-loop-mcp
+```
+
+#### Local Development
 ```bash
 npm start
 ```
@@ -58,113 +134,38 @@ Example:
 npm start -- --project-directory "/path/to/project" --prompt "Please review this code" --output-file "/tmp/feedback.json"
 ```
 
-### MCP Server
+### Available Tools
 
-To use as an MCP server:
+The MCP server provides the following tool:
 
-1. Navigate to the server directory:
-   ```bash
-   cd server
-   ```
+- **`feedback_loop`**: Displays a UI for collecting user feedback and returns the response
 
-2. Run the MCP server:
-   ```bash
-   node mcp-server.js
-   ```
-
-## Building
-
-### Using the Build Script (Recommended)
-
-A comprehensive build script (`build.sh`) is provided for easy building and packaging:
-
-```bash
-# Make the script executable (first time only)
-chmod +x build.sh
-
-# Full build process (clean, install dependencies, build all platforms)
-./build.sh full
-
-# Or simply run without arguments for full build
-./build.sh
-```
-
-#### Build Script Options
-
-```bash
-# Install dependencies only
-./build.sh install
-
-# Clean previous builds
-./build.sh clean
-
-# Build for specific platforms
-./build.sh mac        # macOS only
-./build.sh windows    # Windows only
-./build.sh linux      # Linux only
-./build.sh all        # All platforms
-
-# Create NPM package structure
-./build.sh npm
-
-# Show help
-./build.sh help
-```
-
-### Manual Building (Alternative)
-
-If you prefer to build manually:
-
-```bash
-# Build for current platform
-npm run build
-
-# Build for specific platforms
-npm run build-mac     # macOS
-npm run build-win     # Windows
-npm run build-linux   # Linux
-```
-
-### Build Outputs
-
-- **Electron Apps**: Built applications will be available in the `dist/` directory
-- **NPM Package**: When using `./build.sh npm`, a ready-to-publish NPM package structure is created in `npm-package/`
-
-### Distribution Options
-
-#### 1. Standalone Electron App
-After building, distribute the platform-specific executables from the `dist/` directory.
-
-#### 2. NPM Global Package
-Create and publish an NPM package for global installation:
-
-```bash
-# Create NPM package structure
-./build.sh npm
-
-# Navigate to package directory
-cd npm-package
-
-# Publish to NPM (requires npm account)
-npm publish
-
-# Or install locally for testing
-npm install -g .
-```
-
-#### 3. MCP Client Configuration
-After installation, configure your MCP client (e.g., Claude Desktop) by adding to `claude_desktop_config.json`:
-
+Example usage in AI assistants:
 ```json
 {
-  "mcpServers": {
-    "feedback-loop": {
-      "command": "feedback-loop-mcp",
-      "args": []
-    }
+  "tool_name": "feedback_loop",
+  "arguments": {
+    "project_directory": "/path/to/your/project",
+    "summary": "I've implemented the changes you requested and refactored the main module."
   }
 }
 ```
+
+## Prompt Engineering
+
+For the best results, add the following to your custom prompt in your AI assistant:
+
+```
+Whenever you want to ask a question, always call the MCP feedback_loop tool.
+Whenever you're about to complete a user request, call the MCP feedback_loop tool instead of simply ending the process.
+Keep calling the feedback_loop tool until the user's feedback is empty, then end the request.
+```
+
+This ensures your AI assistant uses this MCP server to request user feedback before marking tasks as completed.
+
+## Benefits
+
+By guiding the assistant to check in with the user instead of branching out into speculative, high-cost tool calls, this module can drastically reduce the number of premium requests (e.g., OpenAI tool invocations) on platforms like Cursor. In some cases, it helps consolidate what would be up to 25 tool calls into a single, feedback-aware request — saving resources and improving performance.
 
 Built applications will be available in the `dist` directory.
 
@@ -204,36 +205,25 @@ Settings are stored in the standard application data directory for each platform
 - JSON output format for easy integration
 - Timestamp and project information included
 
-### UI Features
+## Development
 
-- Dark theme matching the original PyQt version
-- Keyboard shortcuts
-- Responsive design
-
-## Migration from PyQt
-
-This Electron version maintains full feature parity with the original PyQt implementation while offering:
-
-- Better cross-platform consistency
-- Easier maintenance and updates
-- Modern web technologies
-- Enhanced UI capabilities
-- Improved packaging and distribution
+For development and build information, see [DEVELOPMENT.md](DEVELOPMENT.md).
 
 ## Troubleshooting
 
 ### Common Issues
 
-1. **Application won't start**: Ensure Node.js and npm are properly installed
-2. **Settings not saving**: Verify write permissions in the application data directory
+1. **MCP server not connecting**: Ensure the server is running and the configuration is correct
+2. **npx command not found**: Make sure Node.js and npm are properly installed
+3. **Permission errors**: On Unix systems, you may need to make the binary executable
 
 ### Debug Mode
 
 Run with debug output:
 ```bash
-DEBUG=* npm start
+DEBUG=* npx feedback-loop-mcp
 ```
 
 ## License
 
-ISC License - see package.json for details.
+MIT License - see package.json for details.
