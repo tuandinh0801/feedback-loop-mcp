@@ -1,14 +1,20 @@
-const { app, BrowserWindow, ipcMain, dialog } = require('electron');
-const path = require('path');
-const fs = require('fs');
-const os = require('os');
+#!/usr/bin/env node
+import { app, screen, BrowserWindow, ipcMain } from 'electron';
+import Store from 'electron-store';
+import path from 'path';
+import { fileURLToPath } from 'url';
+import fs from 'fs';
+import os from 'os';
 
-let mainWindow;
-let store;
+// recreate __dirname in ESM
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 // Command line arguments
 let projectDirectory = process.cwd();
 let promptText = '';
+let mainWindow;
+let store;
 
 // Parse command line arguments
 const args = process.argv.slice(2);
@@ -23,13 +29,12 @@ for (let i = 0; i < args.length; i++) {
 }
 
 function createWindow() {
-  const { screen } = require('electron');
   const primaryDisplay = screen.getPrimaryDisplay();
   const { width: screenWidth, height: screenHeight } = primaryDisplay.workAreaSize;
-  
+
   const windowWidth = 400;
   const windowHeight = 300;
-  
+
   mainWindow = new BrowserWindow({
     width: windowWidth,
     height: windowHeight,
@@ -46,7 +51,8 @@ function createWindow() {
     webPreferences: {
       nodeIntegration: false,
       contextIsolation: true,
-      preload: path.join(__dirname, 'preload.js')
+      sandbox: false,
+      preload: path.join(__dirname, 'preload.mjs')
     }
   });
 
@@ -88,7 +94,7 @@ function createWindow() {
       projectDirectory,
       promptText
     });
-    
+
     // Ensure window is properly positioned on top after load
     if (process.platform === 'darwin') {
       setTimeout(() => {
@@ -108,10 +114,8 @@ function createWindow() {
 }
 
 async function initializeApp() {
-  // Initialize electron-store
-  const Store = (await import('electron-store')).default;
   store = new Store();
-  
+
   createWindow();
 }
 
@@ -146,7 +150,7 @@ if (process.platform === 'darwin') {
       }
     }
   });
-  
+
   app.on('browser-window-blur', (event, window) => {
     if (window === mainWindow) {
       // Keep window on top even when blurred
@@ -161,41 +165,6 @@ if (process.platform === 'darwin') {
 }
 
 // IPC Handlers
-
-ipcMain.handle('save-settings', async (event, settings) => {
-  try {
-    // Generate project hash for settings key
-    const projectHash = Buffer.from(projectDirectory).toString('base64').replace(/[^a-zA-Z0-9]/g, '').substring(0, 16);
-    
-    // Save project-specific settings
-    store.set(`projects.${projectHash}`, settings);
-    
-    // Save general settings
-    const bounds = mainWindow.getBounds();
-    store.set('general.windowGeometry', bounds);
-    
-    return { success: true };
-  } catch (error) {
-    return { success: false, error: error.message };
-  }
-});
-
-ipcMain.handle('load-settings', async () => {
-  try {
-    const projectHash = Buffer.from(projectDirectory).toString('base64').replace(/[^a-zA-Z0-9]/g, '').substring(0, 16);
-    
-    const projectSettings = store.get(`projects.${projectHash}`, {});
-    const generalSettings = store.get('general', {});
-    
-    return {
-      ...projectSettings,
-      general: generalSettings,
-      projectDirectory
-    };
-  } catch (error) {
-    return { projectDirectory };
-  }
-});
 
 ipcMain.handle('submit-feedback', async (event, data) => {
   try {
@@ -219,12 +188,6 @@ ipcMain.handle('submit-feedback', async (event, data) => {
   }
 });
 
-ipcMain.handle('get-project-info', async () => {
-  return {
-    projectDirectory,
-    promptText
-  };
-});
 
 ipcMain.handle('close-window', async () => {
   try {

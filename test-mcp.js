@@ -5,8 +5,8 @@
  * This script demonstrates how to use the MCP server programmatically
  */
 
-const { launchFeedbackUI } = require('./server/mcp-server.js');
-const path = require('path');
+import { launchFeedbackUI } from './server/mcp-server.js';
+import path from 'path';
 
 async function testMCPServer() {
   console.log('Testing Electron MCP Server...');
@@ -38,8 +38,8 @@ async function testMCPServer() {
 }
 
 // Run the test if this script is executed directly
-if (require.main === module) {
+if (import.meta.url === `file://${process.argv[1]}`) {
   testMCPServer();
 }
 
-module.exports = { testMCPServer };
+export { testMCPServer };

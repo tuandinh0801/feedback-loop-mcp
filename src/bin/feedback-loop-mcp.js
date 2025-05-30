@@ -1,6 +1,11 @@
 #!/usr/bin/env node
-const path = require('path');
-const { spawn } = require('child_process');
+import path from 'path';
+import { spawn } from 'child_process';
+import { fileURLToPath } from 'url';
+import { dirname } from 'path';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
 
 // Get the directory where this package is installed
 const packageDir = path.dirname(path.dirname(__filename));

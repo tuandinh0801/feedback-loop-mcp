@@ -1,11 +1,12 @@
-class FeedbackUI {
+// Feedback Loop MCP - Renderer Process
+
+class FeedbackApp {
   constructor() {
     this.settings = {};
     this.projectDirectory = '';
     this.promptText = '';
     
     this.initializeUI();
-    this.loadSettings();
     this.setupEventListeners();
   }
 
@@ -34,24 +35,11 @@ class FeedbackUI {
 
   setupEventListeners() {
     // Listen for initial data
-    window.electronAPI.onInitialData((data) => {
+    window.electronAPI.onInitialData((event, data) => {
       this.projectDirectory = data.projectDirectory;
       this.promptText = data.promptText;
       this.updateUI();
     });
-  }
-
-  async loadSettings() {
-    try {
-      this.settings = await window.electronAPI.loadSettings();
-      this.applySettings();
-    } catch (error) {
-      console.error('Failed to load settings:', error);
-    }
-  }
-
-  applySettings() {
-    // Settings are now minimal since command functionality is removed
   }
 
   updateUI() {
@@ -62,8 +50,6 @@ class FeedbackUI {
       document.getElementById('prompt-text').textContent = 'Please provide your feedback on the current state of the project.';
     }
   }
-
-
 
   async submitFeedback() {
     const feedback = document.getElementById('feedback-text').value;
@@ -96,7 +82,5 @@ class FeedbackUI {
 
 }
 
-// Initialize the application when DOM is loaded
-document.addEventListener('DOMContentLoaded', () => {
-  new FeedbackUI();
-});
+// Initialize the app when DOM is loaded
+const app = new FeedbackApp();

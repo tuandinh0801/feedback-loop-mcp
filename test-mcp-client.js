@@ -1,8 +1,8 @@
 #!/usr/bin/env node
 
-const { spawn } = require('child_process');
-const { Client } = require('@modelcontextprotocol/sdk/client/index.js');
-const { StdioClientTransport } = require('@modelcontextprotocol/sdk/client/stdio.js');
+import { spawn } from 'child_process';
+import { Client } from '@modelcontextprotocol/sdk/client/index.js';
+import { StdioClientTransport } from '@modelcontextprotocol/sdk/client/stdio.js';
 
 /**
  * MCP client using the official SDK to test the feedback-loop-mcp server
@@ -118,8 +118,8 @@ process.on('SIGINT', async () => {
 });
 
 // Run the test
-if (require.main === module) {
+if (import.meta.url === `file://${process.argv[1]}`) {
   runTest().catch(console.error);
 }
 
-module.exports = MCPTestClient;
+export default MCPTestClient;

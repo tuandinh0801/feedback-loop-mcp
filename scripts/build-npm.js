@@ -1,6 +1,11 @@
 #!/usr/bin/env node
-const fs = require('fs-extra');
-const path = require('path');
+import fs from 'fs-extra';
+import path from 'path';
+import { fileURLToPath } from 'url';
+import { dirname } from 'path';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
 
 class NPMPackageBuilder {
   constructor() {
@@ -47,8 +52,8 @@ class NPMPackageBuilder {
     console.log('📋 Copying source files...');
     
     const filesToCopy = [
-      { src: 'main.js', dest: 'main.js' },
-      { src: 'preload.js', dest: 'preload.js' },
+      { src: 'main.mjs', dest: 'main.mjs' },
+      { src: 'preload.mjs', dest: 'preload.mjs' },
       { src: 'README.md', dest: 'README.md' }
     ];
 
@@ -120,9 +125,9 @@ class NPMPackageBuilder {
 }
 
 // Run the builder if this script is executed directly
-if (require.main === module) {
+if (import.meta.url === `file://${process.argv[1]}`) {
   const builder = new NPMPackageBuilder();
   builder.build();
 }
 
-module.exports = NPMPackageBuilder;
+export default NPMPackageBuilder;
