@@ -127,11 +127,10 @@ The application accepts the following command-line arguments:
 
 - `--project-directory <path>`: Set the project directory
 - `--prompt <text>`: Set the initial prompt/summary text
-- `--output-file <path>`: Specify the output file for feedback results
 
 Example:
 ```bash
-npm start -- --project-directory "/path/to/project" --prompt "Please review this code" --output-file "/tmp/feedback.json"
+npm start -- --project-directory "/path/to/project" --prompt "Please review this code"
 ```
 
 ### Available Tools

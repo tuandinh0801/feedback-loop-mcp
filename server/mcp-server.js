@@ -25,22 +25,33 @@ process.on('SIGTERM', () => {
  */
 function launchFeedbackUI(projectDirectory, summary) {
   return new Promise((resolve, reject) => {
-    const tempFile = path.join(os.tmpdir(), `feedback-${Date.now()}.json`);
     const electronPath = path.join(__dirname, '..');
     
     console.log(`Launching Electron feedback UI for project: ${projectDirectory}`);
     console.log(`Prompt: ${summary}`);
-    console.log(`Output file: ${tempFile}`);
     
-    // Launch Electron app with arguments
+    // Launch Electron app with arguments (no output file needed)
     const electronApp = spawn('npx', ['electron', '.', 
       '--project-directory', projectDirectory, 
-      '--prompt', summary, 
-      '--output-file', tempFile
+      '--prompt', summary
     ], {
       cwd: electronPath,
-      stdio: 'ignore',
-      detached: true
+      stdio: ['pipe', 'pipe', 'pipe'],
+      detached: false
+    });
+
+    let outputData = '';
+    let errorData = '';
+
+    // Collect stdout data
+    electronApp.stdout.on('data', (data) => {
+      outputData += data.toString();
+    });
+
+    // Collect stderr for debugging
+    electronApp.stderr.on('data', (data) => {
+      errorData += data.toString();
+      console.error('Electron stderr:', data.toString());
     });
 
     // Handle process events
@@ -52,18 +63,18 @@ function launchFeedbackUI(projectDirectory, summary) {
     electronApp.on('close', (code) => {
       console.log(`Electron app exited with code: ${code}`);
       
-      // Check if output file exists and read result
-      if (fs.existsSync(tempFile)) {
+      // Parse output data
+      if (outputData.trim()) {
         try {
-          const result = JSON.parse(fs.readFileSync(tempFile, 'utf8'));
-          fs.unlinkSync(tempFile); // Clean up temp file
+          const result = JSON.parse(outputData.trim());
           resolve(result);
         } catch (error) {
           console.error('Failed to parse feedback result:', error);
+          console.error('Raw output:', outputData);
           reject(new Error(`Failed to parse feedback result: ${error.message}`));
         }
       } else {
-        // If no output file, assume user cancelled
+        // If no output data, assume user cancelled
         resolve({
           feedback: '',
           cancelled: true,
@@ -72,9 +83,6 @@ function launchFeedbackUI(projectDirectory, summary) {
         });
       }
     });
-
-    // Detach the process so it can run independently
-    electronApp.unref();
   });
 }
 

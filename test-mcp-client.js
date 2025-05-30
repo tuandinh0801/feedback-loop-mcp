@@ -17,10 +17,21 @@ class MCPTestClient {
     console.log('Starting MCP client and server...');
     
     // Create transport that will spawn the server process
+    // this.transport = new StdioClientTransport({
+    //   command: 'npx',
+    //   args: ['feedback-loop-mcp']
+    // });
+
     this.transport = new StdioClientTransport({
-      command: 'npx',
-      args: ['feedback-loop-mcp']
-    });
+      command: 'node',
+      args: [
+        'server/mcp-server.js',
+        '--project-directory',
+        process.cwd(),
+        '--summary',
+        'Test feedback collection from MCP client'
+      ]
+    })
     
     // Create MCP client
     this.client = new Client({

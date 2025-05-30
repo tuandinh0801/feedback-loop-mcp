@@ -9,7 +9,6 @@ let store;
 // Command line arguments
 let projectDirectory = process.cwd();
 let promptText = '';
-let outputFile = '';
 
 // Parse command line arguments
 const args = process.argv.slice(2);
@@ -19,9 +18,6 @@ for (let i = 0; i < args.length; i++) {
     i++;
   } else if (args[i] === '--prompt' && i + 1 < args.length) {
     promptText = args[i + 1];
-    i++;
-  } else if (args[i] === '--output-file' && i + 1 < args.length) {
-    outputFile = args[i + 1];
     i++;
   }
 }
@@ -209,10 +205,8 @@ ipcMain.handle('submit-feedback', async (event, data) => {
       projectDirectory
     };
 
-    // Write to output file if specified
-    if (outputFile) {
-      fs.writeFileSync(outputFile, JSON.stringify(result, null, 2));
-    }
+    // Write result to stdout
+    process.stdout.write(JSON.stringify(result));
 
     // Close the application after feedback submission
     setTimeout(() => {
@@ -237,14 +231,13 @@ ipcMain.handle('close-window', async () => {
     // Treat close as empty input submission
     const result = {
       feedback: '',
+      cancelled: true,
       timestamp: new Date().toISOString(),
       projectDirectory
     };
 
-    // Write to output file if specified
-    if (outputFile) {
-      fs.writeFileSync(outputFile, JSON.stringify(result, null, 2));
-    }
+    // Write result to stdout
+    process.stdout.write(JSON.stringify(result));
 
     // Close the application
     setTimeout(() => {
