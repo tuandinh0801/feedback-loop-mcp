@@ -77,7 +77,6 @@ class FeedbackUI {
     try {
       const result = await window.electronAPI.submitFeedback({
         feedback: feedback,
-        logs: ''
       });
 
       if (result.success) {

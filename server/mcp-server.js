@@ -66,7 +66,6 @@ function launchFeedbackUI(projectDirectory, summary) {
         // If no output file, assume user cancelled
         resolve({
           feedback: '',
-          logs: '',
           cancelled: true,
           timestamp: new Date().toISOString(),
           projectDirectory
@@ -77,16 +76,6 @@ function launchFeedbackUI(projectDirectory, summary) {
     // Detach the process so it can run independently
     electronApp.unref();
   });
-}
-
-/**
- * Get the first line of text (utility function)
- * @param {string} text - Input text
- * @returns {string} - First line
- */
-function firstLine(text) {
-  if (!text) return '';
-  return text.split('\n')[0].trim();
 }
 
 // MCP Server implementation
@@ -124,30 +113,35 @@ const server = {
           return {
             content: [{
               type: 'text',
-              text: 'Feedback collection was cancelled by the user.'
+              text: JSON.stringify({
+                status: 'cancelled',
+                message: 'Feedback collection was cancelled by the user.',
+              }, null, 2)
             }]
           };
         }
         
-        const feedbackSummary = firstLine(result.feedback);
-        const hasLogs = result.logs && result.logs.trim().length > 0;
-        
-        let responseText = `Feedback received: ${feedbackSummary}`;
-        if (hasLogs) {
-          responseText += `\n\nCommand logs:\n${result.logs}`;
-        }
+        const feedbackData = {
+          status: 'success',
+          feedback: result.feedback || '',
+          projectDirectory: result.projectDirectory || args.project_directory
+        };
         
         return {
           content: [{
             type: 'text',
-            text: responseText
+            text: JSON.stringify(feedbackData, null, 2)
           }]
         };
       } catch (error) {
         return {
           content: [{
             type: 'text',
-            text: `Error launching feedback UI: ${error.message}`
+            text: JSON.stringify({
+              status: 'error',
+              message: `Error launching feedback UI: ${error.message}`,
+              timestamp: new Date().toISOString()
+            }, null, 2)
           }]
         };
       }
@@ -160,7 +154,6 @@ const server = {
 // Export for use as a module
 module.exports = {
   launchFeedbackUI,
-  firstLine,
   server
 };
 
@@ -227,31 +220,35 @@ if (require.main === module) {
             return {
               content: [{
                 type: 'text',
-                text: 'Feedback collection was cancelled by the user.'
+                text: JSON.stringify({
+                  status: 'cancelled',
+                  message: 'Feedback collection was cancelled by the user.',
+                  timestamp: new Date().toISOString()
+                }, null, 2)
               }]
             };
           }
           
-          const feedbackSummary = firstLine(result.feedback);
-          const hasLogs = result.logs && result.logs.trim().length > 0;
-          
-          let responseText = `Feedback received: "${feedbackSummary}"`;
-          
-          if (hasLogs) {
-            responseText += `\n\nCommand logs:\n${result.logs}`;
-          }
+          const feedbackData = {
+            status: 'success',
+            feedback: result.feedback || '',
+            projectDirectory: result.projectDirectory || project_directory
+          };
           
           return {
             content: [{
               type: 'text',
-              text: responseText
+              text: JSON.stringify(feedbackData, null, 2)
             }]
           };
         } catch (error) {
           return {
             content: [{
               type: 'text',
-              text: `Error launching feedback UI: ${error.message}`
+              text: JSON.stringify({
+                status: 'error',
+                message: `Error launching feedback UI: ${error.message}`
+              }, null, 2)
             }]
           };
         }

@@ -205,7 +205,6 @@ ipcMain.handle('submit-feedback', async (event, data) => {
   try {
     const result = {
       feedback: data.feedback,
-      logs: data.logs,
       timestamp: new Date().toISOString(),
       projectDirectory
     };
@@ -238,7 +237,6 @@ ipcMain.handle('close-window', async () => {
     // Treat close as empty input submission
     const result = {
       feedback: '',
-      logs: '',
       timestamp: new Date().toISOString(),
       projectDirectory
     };
