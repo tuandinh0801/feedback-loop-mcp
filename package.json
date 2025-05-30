@@ -1,6 +1,6 @@
 {
   "name": "feedback-loop-mcp",
-  "version": "1.0.3",
+  "version": "1.0.4",
   "description": "Simple MCP Server to enable a human-in-the-loop workflow in AI-assisted development tools like Cursor. This server allows you to run commands, view their output, and provide textual feedback directly to the AI. It is also compatible with Cline and Windsurf.",
   "type": "module",
   "main": "main.mjs",
