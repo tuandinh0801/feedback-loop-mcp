@@ -58,7 +58,7 @@ class FeedbackApp {
     const originalText = submitBtn.innerHTML;
     
     submitBtn.disabled = true;
-    submitBtn.innerHTML = '<span>Sending...</span><i class="fas fa-spinner fa-spin"></i>';
+    submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
 
     try {
       const result = await window.electronAPI.submitFeedback({

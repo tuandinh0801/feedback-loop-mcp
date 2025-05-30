@@ -33,7 +33,7 @@ function createWindow() {
   const { width: screenWidth, height: screenHeight } = primaryDisplay.workAreaSize;
 
   const windowWidth = 400;
-  const windowHeight = 300;
+  const windowHeight = 380;
 
   mainWindow = new BrowserWindow({
     width: windowWidth,
@@ -48,6 +48,8 @@ function createWindow() {
     titleBarStyle: 'hidden',
     type: process.platform === 'darwin' ? 'panel' : 'normal',
     icon: path.join(__dirname, 'assets', 'feedback.png'),
+    vibrancy: 'under-window',
+    transparent: true,
     webPreferences: {
       nodeIntegration: false,
       contextIsolation: true,
@@ -56,7 +58,6 @@ function createWindow() {
     }
   });
 
-  // macOS specific overlay behavior for fullscreen apps
   if (process.platform === 'darwin') {
     mainWindow.setVisibleOnAllWorkspaces(true, { visibleOnFullScreen: true });
     // Set window level to screen saver level to appear above fullscreen apps
@@ -110,6 +111,22 @@ function createWindow() {
   // Handle window close
   mainWindow.on('closed', () => {
     mainWindow = null;
+
+    // Send empty feedback response to MCP server
+    const result = {
+      feedback: '',
+      cancelled: true,
+      timestamp: new Date().toISOString(),
+      projectDirectory
+    };
+
+    // Write result to stdout
+    process.stdout.write(JSON.stringify(result));
+
+    // Now actually quit the app
+    setTimeout(() => {
+      app.exit();
+    }, 100);
   });
 }
 
@@ -120,6 +137,30 @@ async function initializeApp() {
 }
 
 app.whenReady().then(initializeApp);
+
+// Handle app quit - send response before quitting
+app.on('before-quit', (event) => {
+  if (mainWindow && !mainWindow.isDestroyed()) {
+    // Prevent default quit to send response first
+    event.preventDefault();
+    
+    // Send empty feedback response to MCP server
+    const result = {
+      feedback: '',
+      cancelled: true,
+      timestamp: new Date().toISOString(),
+      projectDirectory
+    };
+    
+    // Write result to stdout
+    process.stdout.write(JSON.stringify(result));
+    
+    // Now actually quit the app
+    setTimeout(() => {
+      app.exit();
+    }, 100);
+  }
+});
 
 app.on('window-all-closed', () => {
   if (process.platform !== 'darwin') {

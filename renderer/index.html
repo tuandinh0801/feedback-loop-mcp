@@ -1,35 +1,43 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
+
 <head>
   <meta charset="UTF-8">
-  <title>Feedback Loop MCP</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Feedback Loop MCP - Glassmorphism</title>
   <link rel="stylesheet" href="styles.css">
-  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 </head>
+
 <body>
-  <div class="app">
-    <div class="header">
-      <span class="title">Feedback Loop MCP</span>
+  <div class="feedback-container glass-effect">
+    <div class="feedback-header">
+      <h1 class="feedback-title">Feedback Loop MCP</h1>
     </div>
-    
-    <div id="feedback-section" class="section">
-      <div id="prompt-text" class="prompt"></div>
-      
-      <div class="input-area">
-        <textarea id="feedback-text" placeholder="Share your thoughts..."></textarea>
-        <div class="input-footer">
-          <span class="hint">
-            <i class="fas fa-keyboard"></i>
-            <span class="shortcut-text">⌘ + Enter to send</span>
-          </span>
-          <button id="submit-feedback" class="btn-send">
-            <i class="fas fa-paper-plane"></i>
-          </button>
-        </div>
+
+    <div class="description-box" id="prompt-text">
+      <!-- Content for description-text will be populated by renderer.js -->
+      <p class="description-text">Waiting for command execution...</p>
+    </div>
+
+    <textarea id="feedback-text" placeholder="Empty submit to complete" rows="6"
+      class="feedback-textarea custom-scrollbar"></textarea>
+
+    <div class="feedback-footer">
+      <div class="submission-hint">
+        <span class="command-key">⌘</span>
+        <span>+ Enter to send</span>
       </div>
+      <button id="submit-feedback" aria-label="Send feedback" class="send-button">
+        <i class="far fa-paper-plane send-button-icon"></i>
+      </button>
     </div>
   </div>
-  
+
   <script src="renderer.js"></script>
 </body>
+
 </html>
