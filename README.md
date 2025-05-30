@@ -12,6 +12,12 @@ Simple MCP Server to enable a human-in-the-loop workflow in AI-assisted developm
 - **MCP integration**: Seamlessly integrates with MCP-compatible AI assistants
 - **macOS overlay support**: Native overlay window support on macOS
 
+## Screenshot
+
+![Feedback Loop MCP Interface](images/Screenshot.png)
+
+*The feedback collection interface with macOS vibrancy effects*
+
 ## Installation
 
 ### Quick Start with npx (Recommended)
