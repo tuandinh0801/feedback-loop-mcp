@@ -16,48 +16,44 @@ feedback-loop-mcp/
 │   └── package.json              # NPM package.json template
 ├── scripts/
 │   └── build-npm.js              # NPM package build script
-├── build.sh                      # Main build script
 └── npm-package/                  # Generated NPM package (output)
 ```
 
 ### Build Commands
 
-#### Main Build Script (`build.sh`)
-
-```bash
-# Show help
-./build.sh help
-
-# Install dependencies
-./build.sh install
-
-# Clean build artifacts
-./build.sh clean
-
-# Package Electron app
-./build.sh package
-
-# Create distributables
-./build.sh make
-
-# Start development server
-./build.sh start
-
-# Create NPM package
-./build.sh npm
-```
-
 #### NPM Package Build
 
-The NPM package creation is handled by a dedicated Node.js script:
+To prepare the package for NPM publishing, use the following command from the root directory:
 
 ```bash
-# Direct execution
-node scripts/build-npm.js
-
-# Via build script
-./build.sh npm
+npm run build:npm
 ```
+
+This script (`scripts/build-npm.js`) will:
+- Clean the `npm-package/` directory.
+- Copy necessary source files, assets, and the `src/package.json` into `npm-package/`.
+- Make the binary executable.
+
+The output will be in the `npm-package/` directory, ready for publishing.
+
+#### Development Server
+
+To run the application in development mode (using Electron Forge's start mechanism):
+
+```bash
+npm run start
+# or
+npm run dev
+```
+
+#### Installing Dependencies
+
+To install project dependencies:
+
+```bash
+npm install
+```
+
 
 ### Template System
 
@@ -101,7 +97,7 @@ To publish the package to NPM:
 
 ```bash
 # Build the package
-./build.sh npm
+npm run build:npm
 
 # Navigate to package directory
 cd npm-package
@@ -131,36 +127,18 @@ Run the application in development mode:
 npm run dev
 ```
 
-### Manual Building (Alternative)
-
-If you prefer to build manually:
-
-```bash
-# Build for current platform
-npm run build
-
-# Build for specific platforms
-npm run build-mac     # macOS
-npm run build-win     # Windows
-npm run build-linux   # Linux
-```
-
 ### Build Outputs
 
-- **Electron Apps**: Built applications will be available in the `dist/` directory
-- **NPM Package**: When using `./build.sh npm`, a ready-to-publish NPM package structure is created in `npm-package/`
+- **NPM Package**: Use `npm run build:npm` to create a ready-to-publish NPM package structure in `npm-package/`
 
 ### Distribution Options
 
-#### 1. Standalone Electron App
-After building, distribute the platform-specific executables from the `dist/` directory.
-
-#### 2. NPM Global Package
+#### NPM Global Package
 Create and publish an NPM package for global installation:
 
 ```bash
 # Create NPM package structure
-./build.sh npm
+npm run build:npm
 
 # Navigate to package directory
 cd npm-package

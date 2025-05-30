@@ -92,7 +92,7 @@ const server = {
   tools: [
     {
       name: 'feedback_loop',
-      description: 'Request feedback loop for a given project directory and summary using Electron UI',
+      description: 'Request feedback loop for a given project directory and summary',
       inputSchema: {
         type: 'object',
         properties: {
@@ -197,7 +197,7 @@ if (import.meta.url === `file://${process.argv[1]}`) {
         tools: [
           {
             name: 'feedback_loop',
-            description: 'Request feedback loop for a given project directory and summary using Electron UI',
+            description: 'Request feedback loop for a given project directory and summary',
             inputSchema: {
               type: 'object',
               properties: {
