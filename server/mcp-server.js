@@ -5,6 +5,7 @@ import os from 'os';
 import { fileURLToPath } from 'url';
 import { dirname } from 'path';
 import electronPath from 'electron';
+import JSONParse from 'json-parse-even-better-errors';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -64,12 +65,68 @@ function launchFeedbackUI(projectDirectory, summary) {
       // Parse output data
       if (outputData.trim()) {
         try {
-          const result = JSON.parse(outputData.trim());
-          resolve(result);
+          // First, try to parse the entire output as a single JSON using the robust parser
+          try {
+            const result = JSONParse(outputData.trim());
+            console.log('Successfully parsed output as single JSON');
+            resolve(result);
+            return;
+          } catch (singleJsonError) {
+            console.error('Failed to parse as single JSON:', singleJsonError.message);
+          }
+
+          // Handle multiple JSON objects concatenated together
+          // This approach splits the input at potential JSON boundaries
+          const jsonObjects = splitJsonObjects(outputData);
+          
+          for (const jsonStr of jsonObjects) {
+            try {
+              const result = JSONParse(jsonStr);
+              if (result && (result.feedback !== undefined || result.cancelled)) {
+                console.log('Successfully parsed JSON object with feedback property');
+                resolve(result);
+                return;
+              }
+            } catch (err) {
+              // Continue to next potential JSON object
+            }
+          }
+          
+          // If we couldn't parse any JSON objects, try to extract raw content
+          // This is a more aggressive approach to handle malformed JSON
+          const extractedContent = extractRawFeedback(outputData);
+          
+          if (extractedContent) {
+            const result = {
+              feedback: extractedContent,
+              timestamp: new Date().toISOString(),
+              projectDirectory
+            };
+            console.warn('Using raw content extraction approach');
+            resolve(result);
+            return;
+          }
+          
+          // If all else fails, create a safe result with the raw output
+          // This ensures we always return something useful
+          console.warn('Using safe fallback approach');
+          resolve({
+            feedback: sanitizeOutput(outputData),
+            timestamp: new Date().toISOString(),
+            projectDirectory
+          });
         } catch (error) {
           console.error('Failed to parse feedback result:', error);
           console.error('Raw output:', outputData);
-          reject(new Error(`Failed to parse feedback result: ${error.message}`));
+          
+          // Even if all parsing attempts fail, return something useful
+          // rather than rejecting the promise
+          resolve({
+            feedback: sanitizeOutput(outputData),
+            error: error.message,
+            timestamp: new Date().toISOString(),
+            projectDirectory
+          });
         }
       } else {
         // If no output data, assume user cancelled
@@ -82,6 +139,77 @@ function launchFeedbackUI(projectDirectory, summary) {
       }
     });
   });
+}
+
+// Helper function to split concatenated JSON objects
+function splitJsonObjects(input) {
+  const result = [];
+  let braceCount = 0;
+  let currentObj = '';
+  
+  for (let i = 0; i < input.length; i++) {
+    const char = input[i];
+    currentObj += char;
+    
+    if (char === '{') {
+      braceCount++;
+    } else if (char === '}') {
+      braceCount--;
+      if (braceCount === 0) {
+        result.push(currentObj);
+        currentObj = '';
+      }
+    }
+  }
+  
+  return result;
+}
+
+// Helper function to extract raw feedback content from malformed JSON
+function extractRawFeedback(input) {
+  // Try to extract content between feedback property and the next property
+  const feedbackMatch = input.match(/"feedback"\s*:\s*([^,}]*)/m);
+  if (feedbackMatch && feedbackMatch[1]) {
+    let content = feedbackMatch[1].trim();
+    // Remove surrounding quotes if present
+    if (content.startsWith('"') && content.endsWith('"')) {
+      content = content.substring(1, content.length - 1);
+    }
+    return content;
+  }
+  
+  // Try to extract content between triple backticks if present
+  if (input.includes('```')) {
+    const codeBlockStart = input.indexOf('```');
+    const codeBlockEnd = input.lastIndexOf('```');
+    
+    if (codeBlockStart !== -1 && codeBlockEnd !== -1 && codeBlockEnd > codeBlockStart) {
+      return input.substring(codeBlockStart, codeBlockEnd + 3);
+    }
+  }
+  
+  return null;
+}
+
+// Helper function to sanitize output for safe return
+function sanitizeOutput(input) {
+  // Limit the length to prevent extremely large outputs
+  const maxLength = 10000;
+  let sanitized = input;
+  
+  if (sanitized.length > maxLength) {
+    sanitized = sanitized.substring(0, maxLength) + '... (truncated)';
+  }
+  
+  // Escape any characters that might cause issues
+  sanitized = sanitized
+    .replace(/\\n/g, '\n')
+    .replace(/\\r/g, '\r')
+    .replace(/\\t/g, '\t')
+    .replace(/\\'/g, "'")
+    .replace(/\\"/g, '"');
+  
+  return sanitized;
 }
 
 // MCP Server implementation
