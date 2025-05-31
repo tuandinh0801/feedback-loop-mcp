@@ -10,9 +10,10 @@
   - If the feedback response is empty, you can complete the request without calling the MCP again
   - If feedback is provided in property `feedback`, DO NOT complete the request, address feedback accordingly
 
-- **Required Parameters:**
-  - `project_directory`: Full absolute path to the project directory
-  - `summary`: Short, one-line summary of the question or completed work
+- **Parameters:**
+  - `project_directory` (string, required): Full absolute path to the project directory
+  - `prompt` (string, required): Combined summary and question, describing what was done and asking for specific feedback
+  - `quickFeedbackOptions` (array of strings, optional): An array of predefined feedback strings to be displayed as clickable options in the UI.
 
 - **Examples:**
 
@@ -21,7 +22,7 @@
   // Before asking: "Which database should we use?"
   feedback_loop_mcp({
     project_directory: "/Users/themrb/Documents/personal/n8n-code-generation",
-    summary: "Need clarification on database choice for the project"
+    prompt: "I need to select a database for the project. Would you prefer SQL or NoSQL?"
   });
   ```
 
@@ -30,7 +31,8 @@
   // After implementing a feature
   feedback_loop_mcp({
     project_directory: "/Users/themrb/Documents/personal/n8n-code-generation", 
-    summary: "Completed user authentication implementation with JWT"
+    prompt: "I've implemented user authentication with JWT tokens. Does this implementation meet your security requirements?",
+    quickFeedbackOptions: ["Looks great!", "Needs a small tweak.", "Let's discuss this further."]
   });
   ```
 

@@ -13,6 +13,7 @@ const __dirname = path.dirname(__filename);
 // Command line arguments
 let projectDirectory = process.cwd();
 let promptText = '';
+let quickFeedbackOptions = [];
 let mainWindow;
 let store;
 
@@ -25,6 +26,14 @@ for (let i = 0; i < args.length; i++) {
   } else if (args[i] === '--prompt' && i + 1 < args.length) {
     promptText = args[i + 1];
     i++;
+  } else if (args[i] === '--quick-feedback-options' && i + 1 < args.length) {
+    try {
+      quickFeedbackOptions = JSON.parse(args[i + 1]);
+    } catch (e) {
+      console.error('Failed to parse quick feedback options in main.mjs:', e);
+      quickFeedbackOptions = []; // Default to empty array on error
+    }
+    i++;
   }
 }
 
@@ -33,7 +42,8 @@ function createWindow() {
   const { width: screenWidth, height: screenHeight } = primaryDisplay.workAreaSize;
 
   const windowWidth = 400;
-  const windowHeight = 380;
+  // Initial height, will be adjusted by renderer
+  let windowHeight = 300; 
 
   mainWindow = new BrowserWindow({
     width: windowWidth,
@@ -90,10 +100,11 @@ function createWindow() {
   });
 
   // Send initial data to renderer
-  mainWindow.webContents.once('did-finish-load', () => {
-    mainWindow.webContents.send('initial-data', {
+  mainWindow.webContents.on('did-finish-load', () => {
+    mainWindow.webContents.send('set-ui-data', {
       projectDirectory,
-      promptText
+      promptText, // This is our 'prompt' parameter from the tool call
+      quickFeedbackOptions
     });
 
     // Ensure window is properly positioned on top after load
@@ -206,6 +217,29 @@ if (process.platform === 'darwin') {
 }
 
 // IPC Handlers
+
+ipcMain.on('request-resize', (event, newHeight) => {
+  if (mainWindow && !mainWindow.isDestroyed()) {
+    const primaryDisplay = screen.getPrimaryDisplay();
+    const { height: screenHeight } = primaryDisplay.workAreaSize;
+    
+    // Ensure new height is not more than screen height (minus a small buffer)
+    const maxHeight = screenHeight - 50;
+    const adjustedHeight = Math.min(newHeight, maxHeight);
+    
+    // Get current width to maintain it
+    const [currentWidth] = mainWindow.getSize();
+    mainWindow.setSize(currentWidth, adjustedHeight, true); // true for animate
+
+    // Recalculate and set window position to keep it centered and on-screen
+    const newBounds = mainWindow.getBounds();
+    const newX = Math.round(primaryDisplay.workArea.x + (primaryDisplay.workArea.width - newBounds.width) / 2);
+    const desiredBottomMargin = 50; // Pixels from the bottom of the work area
+    const newY = Math.round(primaryDisplay.workArea.y + primaryDisplay.workArea.height - newBounds.height - desiredBottomMargin);
+    
+    mainWindow.setPosition(newX, newY, true);
+  }
+});
 
 ipcMain.handle('submit-feedback', async (event, data) => {
   try {

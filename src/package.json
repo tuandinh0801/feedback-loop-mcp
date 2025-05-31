@@ -27,8 +27,7 @@
     "electron": "^32.2.6",
     "electron-store": "^10.0.1",
     "@modelcontextprotocol/sdk": "^1.0.0",
-    "zod": "^3.22.0",
-    "json-parse-even-better-errors": "^4.0.0"
+    "zod": "^3.22.0"
   },
   "engines": {
     "node": ">=16.0.0"

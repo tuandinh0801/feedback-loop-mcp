@@ -16,6 +16,7 @@
   <div class="feedback-container glass-effect">
     <div class="feedback-header">
       <h1 class="feedback-title">Feedback Loop MCP</h1>
+      <div class="project-info">Project: <span id="project-directory-display">N/A</span></div>
     </div>
 
     <div class="description-box" id="prompt-text">
@@ -25,6 +26,10 @@
 
     <textarea id="feedback-text" placeholder="Empty submit to complete" rows="6"
       class="feedback-textarea custom-scrollbar"></textarea>
+
+    <div id="quick-feedback-container" class="quick-feedback-buttons">
+      <!-- Buttons will be injected here by renderer.js -->
+    </div>
 
     <div class="feedback-footer">
       <div class="submission-hint">

@@ -11,6 +11,7 @@ Simple MCP Server to enable a human-in-the-loop workflow in AI-assisted developm
 - **Settings persistence**: Save and restore UI preferences per project
 - **MCP integration**: Seamlessly integrates with MCP-compatible AI assistants
 - **macOS overlay support**: Native overlay window support on macOS
+- **Dynamic Quick Feedback**: Provide custom, clickable quick feedback options directly through the MCP tool call, allowing for context-specific suggestions.
 
 ## Screenshot
 
@@ -109,6 +110,27 @@ Add to your Claude Desktop configuration:
 ```
 
 ## Usage
+
+The `feedback_loop` tool accepts the following arguments:
+
+- `project_directory` (string, required): Full path to the project directory.
+- `prompt` (string, required): Combined summary and question, describing what was done and asking for specific feedback.
+- `quickFeedbackOptions` (array of strings, optional): A list of predefined feedback strings that will be displayed as clickable options in the UI for faster feedback.
+
+Example tool call from an AI assistant:
+
+```javascript
+feedback_loop_mcp({
+  project_directory: "/path/to/your/project",
+  prompt: "I implemented the new user authentication flow with JWT. Does this approach meet your requirements?",
+  quickFeedbackOptions: [
+    "Yes, looks good!",
+    "Needs minor changes to the error handling.",
+    "Please try a different approach."
+  ]
+});
+```
+
 
 ### Running the Server
 
@@ -209,6 +231,44 @@ Settings are stored in the standard application data directory for each platform
 - Automatic saving of feedback
 - JSON output format for easy integration
 - Timestamp and project information included
+
+## Prompt Engineering
+
+Crafting effective prompts is key to getting useful feedback. When using the `prompt` parameter, aim to:
+
+1. **Be concise but complete**: Describe what was done and what feedback you need in a single, clear statement.
+
+2. **Include context**: Mention key implementation details or choices that affect the feedback you're seeking.
+
+3. **Ask a specific question**: End with a clear question that guides the user to provide the feedback you need.
+
+4. **Frame the question properly**: Instead of "Does this look good?" try "Does this implementation address your requirements for X?"
+
+Example of an effective prompt:
+
+```
+I've implemented user authentication using JWT with a 24-hour expiration and refresh tokens. Does this approach provide the security level you need for this application?
+```
+
+### Quick Feedback Options
+
+When defining `quickFeedbackOptions`, consider:
+
+- Provide 3-5 options maximum for best UX
+- Include both positive and constructive feedback options
+- Make options specific to the context, not generic
+- Order options from most positive to most critical
+
+Example of well-designed quick feedback options:
+
+```javascript
+quickFeedbackOptions: [
+  "Perfect, exactly what I needed",
+  "Good approach, but please add more validation",
+  "I'd prefer a different authentication method",
+  "Let's discuss alternatives in more detail"
+]
+```
 
 ## Development
 

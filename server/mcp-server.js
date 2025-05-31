@@ -5,33 +5,41 @@ import os from 'os';
 import { fileURLToPath } from 'url';
 import { dirname } from 'path';
 import electronPath from 'electron';
-import JSONParse from 'json-parse-even-better-errors';
+import JSONParse from './json-parse.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
+
 /**
  * Launch the Electron feedback UI
  * @param {string} projectDirectory - The project directory path
- * @param {string} summary - The feedback prompt/summary
+ * @param {string} prompt - The combined summary and question for feedback
+ * @param {string[]} quickFeedbackOptions - Optional array of quick feedback options
  * @returns {Promise<Object>} - The feedback result
  */
-function launchFeedbackUI(projectDirectory, summary) {
+function launchFeedbackUI(projectDirectory, prompt, quickFeedbackOptions = []) {
   return new Promise((resolve, reject) => {
     const entryPoint = path.join(__dirname, '..', 'main.mjs');
 
-    console.error('⏵ spawning Electron →', electronPath, projectDirectory, summary);
+    console.error('⏵ spawning Electron →', electronPath, projectDirectory, prompt);
 
     const env = { ...process.env };
     delete env.ELECTRON_RUN_AS_NODE;
 
     // spawn Electron, not node
+    const electronArgs = [
+      entryPoint,
+      '--project-directory', projectDirectory,
+      '--prompt', prompt
+    ];
+
+    if (quickFeedbackOptions && quickFeedbackOptions.length > 0) {
+      electronArgs.push('--quick-feedback-options', JSON.stringify(quickFeedbackOptions));
+    }
+
     const electronApp = spawn(
       electronPath,
-      [
-        entryPoint,
-        '--project-directory', projectDirectory,
-        '--prompt', summary
-      ],
+      electronArgs,
       {
         cwd: path.join(__dirname, '..'),
         stdio: ['pipe', 'pipe', 'pipe'],
@@ -231,6 +239,11 @@ const server = {
           summary: {
             type: 'string',
             description: 'Short, one-line summary of the changes'
+          },
+          quickFeedbackOptions: {
+            type: 'array',
+            items: { type: 'string' },
+            description: 'Optional array of predefined feedback strings (2-5 options recommended).'
           }
         },
         required: ['project_directory', 'summary']
@@ -247,7 +260,7 @@ const server = {
           node_platform: process.platform,
           node_arch: process.arch,
         }))
-        const result = await launchFeedbackUI(args.project_directory, args.summary);
+        const result = await launchFeedbackUI(args.project_directory, args.summary, args.quickFeedbackOptions);
         
         if (result.cancelled) {
           return {
@@ -303,21 +316,22 @@ if (import.meta.url === `file://${process.argv[1]}`) {
   const { StdioServerTransport } = await import('@modelcontextprotocol/sdk/server/stdio.js');
   const { ListToolsRequestSchema, CallToolRequestSchema, McpError, ErrorCode } = await import('@modelcontextprotocol/sdk/types.js');
   
+  const mcpServer = new Server(
+    {
+      name: 'feedback-loop-mcp-server',
+      version: '1.0.0',
+      description: 'MCP Server for collecting user feedback via Electron UI'
+    },
+    {
+      capabilities: {
+        tools: {}
+      }
+    }
+  );
+
   async function main() {
      // Keep the process alive from the start
      process.stdin.resume();
-     
-     const mcpServer = new Server(
-       {
-         name: 'feedback-loop-mcp',
-         version: '1.0.0',
-       },
-       {
-         capabilities: {
-           tools: {},
-         },
-       }
-     );
 
     // Register the feedback_loop tool
     mcpServer.setRequestHandler(ListToolsRequestSchema, async () => {
@@ -333,12 +347,19 @@ if (import.meta.url === `file://${process.argv[1]}`) {
                   type: 'string',
                   description: 'Full path to the project directory'
                 },
-                summary: {
+                prompt: {
                   type: 'string',
-                  description: 'Short, one-line summary of the changes'
+                  description: 'Combined summary and question, describing what was done and asking for specific feedback'
+                },
+                quickFeedbackOptions: {
+                  type: 'array',
+                  items: {
+                    type: 'string'
+                  },
+                  description: 'Optional array of predefined feedback strings to present as clickable options'
                 }
               },
-              required: ['project_directory', 'summary']
+              required: ['project_directory', 'prompt']
             },
           },
         ],
@@ -347,9 +368,9 @@ if (import.meta.url === `file://${process.argv[1]}`) {
 
     mcpServer.setRequestHandler(CallToolRequestSchema, async (request) => {
       if (request.params.name === 'feedback_loop') {
-        const { project_directory, summary } = request.params.arguments;
+        const { project_directory, prompt, quickFeedbackOptions } = request.params.arguments;
         try {
-          const result = await launchFeedbackUI(project_directory, summary);
+          const result = await launchFeedbackUI(project_directory, prompt, quickFeedbackOptions);
           
           if (result.cancelled) {
             return {

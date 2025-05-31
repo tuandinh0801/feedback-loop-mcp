@@ -5,6 +5,7 @@ class FeedbackApp {
     this.settings = {};
     this.projectDirectory = '';
     this.promptText = '';
+    this.quickFeedbackOptions = [];
     
     this.initializeUI();
     this.setupEventListeners();
@@ -34,25 +35,61 @@ class FeedbackApp {
   }
 
   setupEventListeners() {
-    // Listen for initial data
-    window.electronAPI.onInitialData((event, data) => {
-      this.projectDirectory = data.projectDirectory;
-      this.promptText = data.promptText;
+    // Listen for UI data from main process
+    window.electronAPI.onSetUiData((event, data) => { // Assuming onSetUiData is exposed in preload.mjs for 'set-ui-data' channel
+      this.projectDirectory = data.projectDirectory || 'N/A';
+      this.promptText = data.promptText || 'Please provide your feedback.';
+      this.quickFeedbackOptions = data.quickFeedbackOptions || [];
       this.updateUI();
     });
   }
 
   updateUI() {
-    // Update prompt text
-    if (this.promptText) {
-      document.getElementById('prompt-text').textContent = this.promptText;
-    } else {
-      document.getElementById('prompt-text').textContent = 'Please provide your feedback on the current state of the project.';
+    // Update project directory display
+    const projectDirDisplay = document.getElementById('project-directory-display');
+    if (projectDirDisplay) {
+      projectDirDisplay.textContent = this.projectDirectory;
     }
+
+    // Update prompt text
+    const promptTextDisplay = document.getElementById('prompt-text');
+    if (promptTextDisplay) {
+      promptTextDisplay.textContent = this.promptText;
+    }
+
+    // Update quick feedback buttons
+    const quickFeedbackContainer = document.getElementById('quick-feedback-container');
+    const feedbackTextarea = document.getElementById('feedback-text'); // Corrected ID from 'feedback-textarea' to 'feedback-text'
+
+    if (quickFeedbackContainer && feedbackTextarea) {
+      quickFeedbackContainer.innerHTML = ''; // Clear existing buttons
+      if (this.quickFeedbackOptions && this.quickFeedbackOptions.length > 0) {
+        this.quickFeedbackOptions.forEach(optionText => {
+          const box = document.createElement('div');
+          box.textContent = optionText;
+          box.classList.add('quick-feedback-box'); // New class for box styling
+          box.addEventListener('click', () => {
+            this.submitFeedback(optionText); // Submit immediately with the box's text
+          });
+          quickFeedbackContainer.appendChild(box);
+        });
+      }
+    }
+
+    // Request window resize after UI is updated
+    // Use requestAnimationFrame to ensure DOM has been updated before measuring
+    requestAnimationFrame(() => {
+      const container = document.querySelector('.feedback-container');
+      if (container) {
+        // Add a small buffer to the height to prevent scrollbars due to rounding/borders
+        const requiredHeight = container.scrollHeight + 50; // Increased buffer
+        window.electronAPI.requestResize(requiredHeight);
+      }
+    });
   }
 
-  async submitFeedback() {
-    const feedback = document.getElementById('feedback-text').value;
+  async submitFeedback(feedbackText) {
+    const feedback = (typeof feedbackText === 'string') ? feedbackText : document.getElementById('feedback-text').value;
     
     const submitBtn = document.getElementById('submit-feedback');
     const originalText = submitBtn.innerHTML;

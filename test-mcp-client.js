@@ -25,11 +25,7 @@ class MCPTestClient {
     this.transport = new StdioClientTransport({
       command: 'node',
       args: [
-        'server/mcp-server.js',
-        '--project-directory',
-        process.cwd(),
-        '--summary',
-        'Test feedback collection from MCP client'
+        'server/mcp-server.js'
       ]
     })
     
@@ -90,9 +86,16 @@ async function runTest() {
     
     // Test calling the feedback_loop tool
     try {
-      const feedbackResponse = await client.callTool('feedback_loop', {
-        project_directory: process.cwd(),
-        summary: 'Test feedback collection from MCP client'
+      // Call the feedback_loop tool with our test parameters
+      const toolResponse = await client.callTool('feedback_loop', {
+        project_directory: '/Users/Shared/ssd/Work/feedback-loop-mcp',
+        prompt: 'Test feedback collection from MCP client',
+        quickFeedbackOptions: [
+          'This is a much longer feedback option that should test how well the UI handles wrapping of text in the vertical boxes',
+          'Another lengthy feedback option that contains specific details about what the user thinks about the implementation',
+          'This feedback option is also quite verbose and contains multiple sentences. It should demonstrate how the UI handles multi-line content.',
+          'Looks Good To Me!'
+        ]
       });
       console.log('Feedback tool response received successfully');
     } catch (error) {
