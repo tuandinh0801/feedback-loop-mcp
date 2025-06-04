@@ -51,10 +51,45 @@ class FeedbackApp {
       projectDirDisplay.textContent = this.projectDirectory;
     }
 
-    // Update prompt text
+    // Update prompt text with markdown rendering
     const promptTextDisplay = document.getElementById('prompt-text');
     if (promptTextDisplay) {
-      promptTextDisplay.textContent = this.promptText;
+      try {
+        // Configure marked options for better security and performance
+        marked.setOptions({
+          breaks: true, // Convert line breaks to <br>
+          gfm: true, // Use GitHub Flavored Markdown
+          headerIds: false, // Don't generate IDs for headers
+          mangle: false, // Don't mangle email addresses
+          sanitize: false // We'll use DOMPurify instead
+        });
+        
+        // Parse markdown to HTML
+        const rawHtml = marked.parse(this.promptText);
+        
+        // Sanitize HTML to prevent XSS attacks
+        const cleanHtml = DOMPurify.sanitize(rawHtml, {
+          ALLOWED_TAGS: [
+            'h1', 'h2', 'h3', 'h4', 'h5', 'h6',
+            'p', 'br', 'hr',
+            'strong', 'b', 'em', 'i', 'u',
+            'code', 'pre',
+            'ul', 'ol', 'li',
+            'blockquote',
+            'a',
+            'table', 'thead', 'tbody', 'tr', 'th', 'td'
+          ],
+          ALLOWED_ATTR: ['href', 'title', 'class'],
+          ALLOW_DATA_ATTR: false
+        });
+        
+        // Set the HTML content
+        promptTextDisplay.innerHTML = cleanHtml;
+      } catch (error) {
+        // Fallback to plain text if markdown parsing fails
+        console.error('Markdown parsing error:', error);
+        promptTextDisplay.textContent = this.promptText;
+      }
     }
 
     // Update quick feedback buttons
